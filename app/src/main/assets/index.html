@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>QuestSongBridge Upload</title>
+<style>
+  body { font-family: system-ui, sans-serif; margin: 0; padding: 16px; background:#f5f5f5; color:#222; }
+  .card { background:#fff; border-radius:8px; padding:16px; margin-bottom:16px; box-shadow:0 1px 3px rgba(0,0,0,.1); }
+  h1 { margin-top:0; }
+  #drop { border:2px dashed #999; padding:40px; text-align:center; border-radius:8px; background:#fafafa; }
+  #drop.drag { background:#e8f0fe; border-color:#1a73e8; }
+  .file { border:1px solid #ddd; padding:8px; margin:8px 0; border-radius:6px; }
+  .progress { height:8px; background:#eee; border-radius:4px; overflow:hidden; }
+  .bar { height:100%; background:#1a73e8; width:0%; }
+  input[type=text] { width:100%; padding:8px; box-sizing:border-box; }
+  button { padding:8px 12px; }
+  .ok { color:#1e7e34; }
+  .err { color:#c00; }
+  #help { font-size:13px; color:#555; }
+</style>
+</head>
+<body>
+<div class="card">
+  <h1>QuestSongBridge</h1>
+  <p>Upload Beat Saber custom song ZIPs to your Quest.</p>
+  <div id="status">Connecting...</div>
+</div>
+
+<div class="card">
+  <h2>Authentication</h2>
+  <p>Enter the token shown in the QuestSongBridge app.</p>
+  <input type="text" id="token" placeholder="Access token">
+  <button id="saveToken">Save</button>
+</div>
+
+<div class="card">
+  <h2>Headsets</h2>
+  <div id="headsetList"></div>
+  <input type="text" id="hsName" placeholder="Name">
+  <input type="text" id="hsUrl" placeholder="URL (http://...)">
+  <input type="text" id="hsToken" placeholder="Token">
+  <button id="addHs">Add headset</button>
+  <p><label><input type="checkbox" id="replaceCheck"> Replace if song already exists</label></p>
+</div>
+
+<div class="card">
+  <div id="drop">Drag &amp; drop song ZIP files here, or <input type="file" id="picker" multiple accept=".zip"></div>
+</div>
+
+<div class="card">
+  <h2>Uploads</h2>
+  <div id="uploads"></div>
+</div>
+
+<div class="card">
+  <h2>Recent</h2>
+  <div id="recent"></div>
+</div>
+
+<div class="card">
+  <h2>Help</h2>
+  <div id="help">
+    <ol>
+      <li>Start the server in QuestSongBridge on the Quest.</li>
+      <li>Read the URL and token from the app.</li>
+      <li>Open this page on your Windows PC.</li>
+      <li>Enter the token and save.</li>
+      <li>Drag one or more song ZIPs onto the drop area.</li>
+      <li>Wait for confirmation, then press Refresh in Beat Saber.</li>
+    </ol>
+    <p>Troubleshooting: ensure PC and Quest are on the same Wi-Fi. Disable client isolation. If connection fails, check firewall.</p>
+  </div>
+</div>
+
+<script>
+const $ = id => document.getElementById(id);
+// Parse token from QR code URL (?t=...)
+const params = new URLSearchParams(location.search);
+if (params.get('t')) {
+  token = params.get('t');
+  localStorage.setItem('qs_token', token);
+  history.replaceState({}, '', location.pathname);
+} else {
+  token = localStorage.getItem('qs_token') || '';
+}
+$('token').value = token;
+
+function saveToken(){ token = $('token').value.trim(); localStorage.setItem('qs_token', token); refreshStatus(); }
+$('saveToken').onclick = saveToken;
+
+async function api(path, opts={}){
+  const headers = Object.assign({'X-Auth-Token': token}, opts.headers||{});
+  return fetch(path, Object.assign({}, opts, {headers}));
+}
+
+async function refreshStatus(){
+  try {
+    const r = await fetch('/api/status');
+    const j = await r.json();
+    $('status').innerHTML = (j.headsetName?('Headset: '+j.headsetName+' | '):'') + 'Server: ' + j.status + ' | Storage: ' + (j.storageName||'') + ' (' + (j.storageOk?'writable':'not writable') + ') | Addresses: ' + (j.addresses||[]).join(', ');
+    if (!token && j.token) { /* do not auto-fill for security; show hint */ }
+  } catch(e){ $('status').textContent = 'Connection failed'; }
+}
+refreshStatus();
+setInterval(refreshStatus, 5000);
+
+async function refreshRecent(){
+  try {
+    const r = await api('/api/recent');
+    if(!r.ok) return;
+    const j = await r.json();
+    $('recent').innerHTML = (j||[]).map(x=>'<div>'+x+'</div>').join('') || 'None';
+  } catch(e){}
+}
+refreshRecent();
+setInterval(refreshRecent, 10000);
+
+const drop = $('drop');
+drop.addEventListener('dragover', e=>{ e.preventDefault(); drop.classList.add('drag'); });
+drop.addEventListener('dragleave', ()=>drop.classList.remove('drag'));
+drop.addEventListener('drop', e=>{
+  e.preventDefault(); drop.classList.remove('drag');
+  const files = [...e.dataTransfer.files].filter(f=>f.name.toLowerCase().endsWith('.zip'));
+  queue(files);
+});
+$('picker').addEventListener('change', e=>{
+  const files = [...e.target.files].filter(f=>f.name.toLowerCase().endsWith('.zip'));
+  queue(files);
+  e.target.value='';
+});
+
+const queueList = [];
+function queue(files){
+  for(const f of files) queueList.push(f);
+  processQueue();
+}
+
+let busy = false;
+function loadHeadsets(){ try { return JSON.parse(localStorage.getItem('qs_headsets')||'[]'); } catch(e){ return []; } }
+function saveHeadsets(list){ localStorage.setItem('qs_headsets', JSON.stringify(list)); renderHeadsets(); }
+function renderHeadsets(){
+  const list = loadHeadsets();
+  const div = $('headsetList');
+  if (!list.length) { div.innerHTML = '<em>No saved headsets. Add one to upload to multiple.</em>'; return; }
+  div.innerHTML = list.map((h,i)=>'<div><label><input type="checkbox" class="hsSel" data-i="'+i+'" checked> '+h.name+' ('+h.url+')</label> <button data-del="'+i+'">Remove</button></div>').join('');
+  div.querySelectorAll('[data-del]').forEach(b=>b.onclick=()=>{ const i=+b.dataset.del; const l=loadHeadsets(); l.splice(i,1); saveHeadsets(l); });
+}
+renderHeadsets();
+$('addHs').onclick = ()=>{
+  const name = $('hsName').value.trim() || 'Headset';
+  const url = $('hsUrl').value.trim().replace(/\\/$/,'');
+  const t = $('hsToken').value.trim();
+  if (!url) return;
+  const list = loadHeadsets();
+  list.push({name,url,token:t});
+  saveHeadsets(list);
+  $('hsName').value=''; $('hsUrl').value=''; $('hsToken').value='';
+};
+
+function getTargets(){
+  const list = loadHeadsets();
+  const sel = [...document.querySelectorAll('.hsSel:checked')].map(c=>loadHeadsets()[+c.dataset.i]);
+  if (sel.length) return sel;
+  // default: current server
+  return [{name: 'This headset', url: location.origin, token: token}];
+}
+
+async function processQueue(){
+  if (busy) return;
+  busy = true;
+  while (queueList.length){
+    const f = queueList.shift();
+    const targets = getTargets();
+    for (const t of targets) {
+      await uploadOne(f, t);
+    }
+  }
+  busy = false;
+}
+
+function makeFileRow(name){
+  const div = document.createElement('div');
+  div.className = 'file';
+  div.innerHTML = '<div>'+name+'</div><div class="progress"><div class="bar"></div></div><div class="msg"></div>';
+  $('uploads').prepend(div);
+  return div;
+}
+
+async function uploadOne(file, target){
+  const row = makeFileRow(file.name + ' → ' + target.name);
+  const bar = row.querySelector('.bar');
+  const msg = row.querySelector('.msg');
+  msg.textContent = 'Uploading...';
+  const form = new FormData();
+  form.append('file', file, file.name);
+  const replace = $('replaceCheck').checked;
+  const url = target.url + '/api/upload' + (replace?'?replace=1':'');
+  try {
+    const xhr = new XMLHttpRequest();
+    const p = new Promise((resolve,reject)=>{
+      xhr.upload.onprogress = e => {
+        if (e.lengthComputable) bar.style.width = (e.loaded/e.total*100).toFixed(1)+'%';
+      };
+      xhr.onload = () => resolve(xhr);
+      xhr.onerror = () => reject(new Error('network error'));
+    });
+    xhr.open('POST', url);
+    xhr.setRequestHeader('X-Auth-Token', target.token || token);
+    xhr.send(form);
+    const res = await p;
+    let j = {};
+    try { j = JSON.parse(res.responseText); } catch(e){}
+    if (res.status>=200 && res.status<300 && j.success) {
+      bar.style.width='100%'; bar.style.background='#1e7e34';
+      msg.className='msg ok';
+      msg.textContent = j.message + ' ' + (j.songs||[]).map(s=>s.song+':'+s.message).join(', ');
+    } else {
+      bar.style.background='#c00';
+      msg.className='msg err';
+      msg.textContent = (target.name+': ') + (j.message || ('HTTP '+res.status));
+    }
+  } catch(e){
+    bar.style.background='#c00';
+    msg.className='msg err';
+    msg.textContent = target.name + ' failed: '+e.message;
+  }
+  refreshRecent();
+}
+</script>
+</body>
+</html>
