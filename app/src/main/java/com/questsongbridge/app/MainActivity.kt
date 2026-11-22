@@ -51,7 +51,10 @@ class MainActivity : AppCompatActivity() {
 
         findViewById<Button>(R.id.startBtn).setOnClickListener { startServer() }
         findViewById<Button>(R.id.stopBtn).setOnClickListener { stopServer() }
-        findViewById<Button>(R.id.selectStorageBtn).setOnClickListener { picker.launch(null) }
+        findViewById<Button>(R.id.selectStorageBtn).setOnClickListener {
+            val initial = android.net.Uri.parse("content://com.android.externalstorage.documents/document/primary:ModData/com.beatgames.beatsaber/Mods/SongCore/CustomLevels")
+            picker.launch(initial)
+        }
         findViewById<Button>(R.id.testWriteBtn).setOnClickListener {
             val ok = StorageManager.testWrite(this)
             ServerState.storageOk = ok

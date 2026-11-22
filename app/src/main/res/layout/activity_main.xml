@@ -82,6 +82,12 @@
                 android:text="Stop Server" />
         </LinearLayout>
 
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:paddingTop="8dp"
+            android:text="Suggested: ModData/com.beatgames.beatsaber/Mods/SongCore/CustomLevels" />
+
         <Button
             android:id="@+id/selectStorageBtn"
             android:layout_width="match_parent"
