@@ -5,28 +5,44 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>QuestSongBridge Upload</title>
 <style>
-  body { font-family: system-ui, sans-serif; margin: 0; padding: 16px; background:#f5f5f5; color:#222; }
-  .card { background:#fff; border-radius:8px; padding:16px; margin-bottom:16px; box-shadow:0 1px 3px rgba(0,0,0,.1); }
-  h1 { margin-top:0; }
-  #drop { border:2px dashed #999; padding:40px; text-align:center; border-radius:8px; background:#fafafa; }
-  #drop.drag { background:#e8f0fe; border-color:#1a73e8; }
-  .file { border:1px solid #ddd; padding:8px; margin:8px 0; border-radius:6px; }
-  .progress { height:8px; background:#eee; border-radius:4px; overflow:hidden; }
-  .bar { height:100%; background:#1a73e8; width:0%; }
-  input[type=text] { width:100%; padding:8px; box-sizing:border-box; }
-  button { padding:8px 12px; }
-  .ok { color:#1e7e34; }
-  .err { color:#c00; }
-  #help { font-size:13px; color:#555; }
-  #toast {
-    display:none; position:fixed; top:14px; left:50%; transform:translateX(-50%);
-    z-index:10; padding:8px 16px; border-radius:8px; background:#1a73e8; color:#fff;
-    font-weight:bold; box-shadow:0 2px 8px rgba(0,0,0,.3);
+  :root {
+    --bg: #F2F4F8;
+    --card: #FFFFFF;
+    --text: #1A1C1E;
+    --muted: #5F6368;
+    --primary: #1A73E8;
+    --ok: #1E7E34;
+    --err: #C00000;
+    --radius: 16px;
   }
-  #drop .hint { display:block; margin-top:8px; color:#555; font-size:13px; }
-  #drop.ready { background:#e6f4e6; border-color:#1e7e34; }
-  #drop.notready { background:#fafafa; border-color:#c00; }
-  #drop[disabled], .disabled { opacity:0.55; }
+  * { box-sizing: border-box; }
+  body { font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; margin: 0; padding: 24px; background: var(--bg); color: var(--text); }
+  h1 { margin: 0 0 4px; font-size: 24px; }
+  h2 { margin: 0 0 8px; font-size: 18px; }
+  .card { background: var(--card); border-radius: var(--radius); padding: 20px; margin-bottom: 16px; box-shadow: 0 2px 8px rgba(0,0,0,.06); }
+  details.card { padding: 12px 20px; }
+  details.card summary { cursor: pointer; padding: 8px 0; }
+  #drop { border: 2px dashed #B0B7C3; padding: 48px 24px; text-align: center; border-radius: var(--radius); background: #FAFBFC; transition: all .15s; }
+  #drop.drag { background: #E8F0FE; border-color: var(--primary); }
+  #drop.ready { background: #E6F4E6; border-color: var(--ok); }
+  #drop.notready { background: #FDF0F0; border-color: var(--err); }
+  .file { border: 1px solid #E0E3E7; padding: 12px; margin: 8px 0; border-radius: 12px; background: #FAFBFC; }
+  .progress { height: 10px; background: #E8EAED; border-radius: 5px; overflow: hidden; margin-top: 6px; }
+  .bar { height: 100%; background: var(--primary); width: 0%; transition: width .2s; }
+  input[type=text] { width: 100%; padding: 10px 12px; box-sizing: border-box; border: 1px solid #DADCE0; border-radius: 10px; font-size: 14px; }
+  button { padding: 10px 16px; border-radius: 10px; border: none; background: var(--primary); color: #fff; font-weight: 600; cursor: pointer; }
+  button:hover { filter: brightness(1.05); }
+  button:disabled { opacity: .5; cursor: not-allowed; }
+  .ok { color: var(--ok); }
+  .err { color: var(--err); }
+  #help { font-size: 13px; color: var(--muted); }
+  #toast {
+    display:none; position:fixed; top:18px; left:50%; transform:translateX(-50%);
+    z-index:10; padding:10px 18px; border-radius:10px; background:var(--primary); color:#fff;
+    font-weight:600; box-shadow:0 4px 12px rgba(0,0,0,.2);
+  }
+  #drop .hint { display:block; margin-top:8px; color:var(--muted); font-size:13px; }
+  #queued { margin-top: 8px; color: var(--muted); font-size: 13px; }
 </style>
 </head>
 <body>
