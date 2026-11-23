@@ -1,5 +1,8 @@
 package com.questsongbridge.app
 
+import android.content.ClipData
+import android.content.ClipboardManager
+import android.content.Context
 import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
@@ -65,6 +68,11 @@ class MainActivity : AppCompatActivity() {
             Settings.regenerateToken()
             ServerState.logMsg("Token regenerated")
             refresh()
+        }
+        findViewById<Button>(R.id.copyTokenBtn).setOnClickListener {
+            val cm = getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
+            cm.setPrimaryClip(ClipData.newPlainText("QuestSongBridge token", Settings.getToken()))
+            ServerState.logMsg("Token copied to clipboard")
         }
         findViewById<Button>(R.id.saveSettingsBtn).setOnClickListener { saveSettings() }
         findViewById<Button>(R.id.clearLogBtn).setOnClickListener {

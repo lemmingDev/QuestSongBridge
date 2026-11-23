@@ -41,6 +41,33 @@
                     android:textColor="#5F6368" />
 
                 <TextView
+                    android:id="@+id/tokenText"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:paddingTop="12dp"
+                    android:text="Token: -"
+                    android:textSize="24sp"
+                    android:textStyle="bold"
+                    android:fontFamily="monospace"
+                    android:textColor="#1A73E8" />
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/copyTokenBtn"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp"
+                    style="@style/Widget.Material3.Button.OutlinedButton"
+                    android:text="Copy Token" />
+
+                <ImageView
+                    android:id="@+id/qrImage"
+                    android:layout_width="200dp"
+                    android:layout_height="200dp"
+                    android:layout_gravity="center"
+                    android:layout_marginTop="12dp"
+                    android:contentDescription="QR code" />
+
+                <TextView
                     android:id="@+id/statusText"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
@@ -63,15 +90,6 @@
                     android:layout_height="wrap_content"
                     android:text="Port: 8080"
                     android:textColor="#5F6368" />
-
-                <TextView
-                    android:id="@+id/tokenText"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:paddingTop="4dp"
-                    android:text="Token: -"
-                    android:fontFamily="monospace"
-                    android:textColor="#1A1C1E" />
 
                 <TextView
                     android:id="@+id/storageText"
@@ -104,13 +122,6 @@
                         android:text="Stop Server" />
                 </LinearLayout>
 
-                <ImageView
-                    android:id="@+id/qrImage"
-                    android:layout_width="180dp"
-                    android:layout_height="180dp"
-                    android:layout_gravity="center"
-                    android:layout_marginTop="12dp"
-                    android:contentDescription="QR code" />
             </LinearLayout>
         </com.google.android.material.card.MaterialCardView>
 
