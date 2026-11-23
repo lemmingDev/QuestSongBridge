@@ -3,7 +3,23 @@
     android:height="108dp"
     android:viewportWidth="108"
     android:viewportHeight="108">
+    <!-- Bridge arch -->
     <path
         android:fillColor="#FFFFFF"
-        android:pathData="M54,30 L78,54 L54,78 L30,54 Z" />
+        android:pathData="M24,72 Q54,36 84,72 L84,82 L76,82 L76,74 Q54,48 32,74 L32,82 L24,82 Z" />
+    <!-- Bridge pillars -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M24,72 L32,72 L32,90 L24,90 Z" />
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M76,72 L84,72 L84,90 L76,90 Z" />
+    <!-- Music note -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M58,18 L58,46 A8,6 0 1,1 50,46 L50,24 L68,20 L68,16 Z" />
+    <!-- Note head -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M46,44 A6,5 0 1,0 58,44 A6,5 0 1,0 46,44 Z" />
 </vector>
